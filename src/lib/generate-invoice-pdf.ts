@@ -1,16 +1,23 @@
 import PDFDocument from "pdfkit";
-import type { Client, Editor, Invoice, Video } from "@/db/schema";
-import { formatCurrency } from "./currency";
+import type { Client, Invoice, Video } from "@/db/schema";
 import { BUSINESS_INFO } from "./business-info";
 
-type InvoiceData = Invoice & { client: Client; videos: (Video & { editor: Editor })[] };
+type InvoiceData = Invoice & { client: Client; videos: Video[] };
 
 const COLUMNS = [
-  { key: "name", label: "Video", x: 50, width: 200 },
-  { key: "editor", label: "Editor", x: 250, width: 120 },
+  { key: "name", label: "Video", x: 50, width: 290 },
   { key: "date", label: "Date", x: 370, width: 90 },
   { key: "price", label: "Price", x: 460, width: 90 },
 ] as const;
+
+// The built-in PDF fonts have no rupee glyph, so amounts print as "5,000/-".
+function formatAmount(amount: number): string {
+  const text = new Intl.NumberFormat("en-IN", {
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+  return `${text}/-`;
+}
 
 export function generateInvoicePdf(invoice: InvoiceData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -75,9 +82,8 @@ export function generateInvoicePdf(invoice: InvoiceData): Promise<Buffer> {
         y = 50;
       }
       doc.text(video.name, COLUMNS[0].x, y, { width: COLUMNS[0].width });
-      doc.text(video.editor.name, COLUMNS[1].x, y, { width: COLUMNS[1].width });
-      doc.text(video.date, COLUMNS[2].x, y, { width: COLUMNS[2].width });
-      doc.text(formatCurrency(video.price), COLUMNS[3].x, y, { width: COLUMNS[3].width, align: "right" });
+      doc.text(video.date, COLUMNS[1].x, y, { width: COLUMNS[1].width });
+      doc.text(formatAmount(video.price), COLUMNS[2].x, y, { width: COLUMNS[2].width, align: "right" });
       y += 20;
     }
 
@@ -88,7 +94,7 @@ export function generateInvoicePdf(invoice: InvoiceData): Promise<Buffer> {
       .font("Helvetica-Bold")
       .fontSize(12)
       .text("Total", 370, y, { width: 90 })
-      .text(formatCurrency(invoice.subtotal), 460, y, { width: 90, align: "right" });
+      .text(formatAmount(invoice.subtotal), 460, y, { width: 90, align: "right" });
 
     if (invoice.notes) {
       doc

@@ -12,7 +12,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/invoices/[id]/p
 
   const invoice = await db.query.invoices.findFirst({
     where: (invoices, { eq }) => eq(invoices.id, id),
-    with: { client: true, videos: { with: { editor: true } } },
+    with: { client: true, videos: true },
   });
 
   if (!invoice) {
