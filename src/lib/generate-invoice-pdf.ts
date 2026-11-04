@@ -21,11 +21,6 @@ export function generateInvoicePdf(invoice: InvoiceData): Promise<Buffer> {
     doc.on("error", reject);
 
     doc
-      .fontSize(16)
-      .font("Helvetica-Bold")
-      .text(BUSINESS_INFO.name, 50, 50, { width: 300 });
-
-    doc
       .fontSize(20)
       .font("Helvetica-Bold")
       .text("INVOICE", 400, 50, { width: 160, align: "right" });
