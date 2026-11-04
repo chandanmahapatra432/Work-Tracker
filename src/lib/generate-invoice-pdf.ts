@@ -30,12 +30,12 @@ export function generateInvoicePdf(invoice: InvoiceData): Promise<Buffer> {
     doc
       .fontSize(20)
       .font("Helvetica-Bold")
-      .text("INVOICE", 50, 50, { width: 500, align: "center" });
+      .text("INVOICE", 400, 50, { width: 160, align: "right" });
     doc
       .fontSize(10)
       .font("Helvetica")
-      .text(invoice.invoiceNumber, 50, 75, { width: 500, align: "center" })
-      .text(`Issued ${invoice.issueDate}`, 50, 90, { width: 500, align: "center" });
+      .text(invoice.invoiceNumber, 400, 75, { width: 160, align: "right" })
+      .text(`Issued ${invoice.issueDate}`, 400, 90, { width: 160, align: "right" });
 
     doc.moveDown(3);
     const infoTop = 130;
