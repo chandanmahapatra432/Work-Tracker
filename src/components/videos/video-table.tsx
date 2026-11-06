@@ -84,7 +84,7 @@ export function VideoTable({
                     )}
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <ProgressSelect id={v.id} progress={v.progress} disabled={billed} />
+                        <ProgressSelect id={v.id} progress={v.progress} />
                         {isAdmin && billed && (
                           <Badge variant="secondary" className="font-normal">
                             Invoiced
@@ -94,12 +94,7 @@ export function VideoTable({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={billed}
-                          onClick={() => setEditing(v)}
-                        >
+                        <Button variant="ghost" size="icon-sm" onClick={() => setEditing(v)}>
                           <Pencil className="size-4" />
                         </Button>
                         <DeleteVideoButton id={v.id} name={v.name} disabled={billed} />

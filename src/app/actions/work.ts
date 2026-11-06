@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, asc, eq, gte, inArray, isNull, lte } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { clients, editors, invoices, videos, INVOICE_STATUSES, WORK_PROGRESS_VALUES } from "@/db/schema";
 import { nextInvoiceNumber } from "@/lib/invoice";
@@ -135,11 +135,12 @@ export async function updateVideo(
       price: videos.price,
       editorPayout: videos.editorPayout,
       editorId: videos.editorId,
+      clientId: videos.clientId,
     })
     .from(videos)
     .where(eq(videos.id, id));
-  if (current?.invoiceId) {
-    return { error: "This video is already on an invoice and can't be edited." };
+  if (current?.invoiceId && current.clientId !== result.data.clientId) {
+    return { error: "This video is on an invoice, so its client can't be changed." };
   }
 
   const admin = await isAdmin();
@@ -162,6 +163,15 @@ export async function updateVideo(
     .update(videos)
     .set({ ...rest, editorId: ownEditorId, price: nextPrice, editorPayout: nextPayout, updatedAt: new Date() })
     .where(eq(videos.id, id));
+
+  if (current?.invoiceId && nextPrice !== current.price) {
+    const [{ total }] = await db
+      .select({ total: sql<string>`coalesce(sum(${videos.price}), 0)` })
+      .from(videos)
+      .where(eq(videos.invoiceId, current.invoiceId));
+    await db.update(invoices).set({ subtotal: Number(total) }).where(eq(invoices.id, current.invoiceId));
+    revalidatePath("/invoices");
+  }
 
   revalidatePath("/");
   return {};
