@@ -215,14 +215,26 @@ export async function updateVideoPayoutPaid(id: string, paid: boolean): Promise<
   return {};
 }
 
-/** Marks every currently-unpaid video for one editor as paid in one go. Admin-only. */
-export async function markEditorPayoutsPaid(editorId: string): Promise<ActionResult> {
+/** Marks one editor's unpaid videos in the given month (YYYY-MM) as paid. Admin-only. */
+export async function markEditorPayoutsPaid(editorId: string, month: string): Promise<ActionResult> {
   if (!(await isAdmin())) return { error: "Not authorized." };
+  if (!/^\d{4}-\d{2}$/.test(month)) return { error: "Invalid month." };
+
+  const [year, mon] = month.split("-").map(Number);
+  const monthStart = `${month}-01`;
+  const monthEnd = new Date(Date.UTC(year, mon, 0)).toISOString().slice(0, 10);
 
   await db
     .update(videos)
     .set({ editorPaid: true, updatedAt: new Date() })
-    .where(and(eq(videos.editorId, editorId), eq(videos.editorPaid, false)));
+    .where(
+      and(
+        eq(videos.editorId, editorId),
+        eq(videos.editorPaid, false),
+        gte(videos.date, monthStart),
+        lte(videos.date, monthEnd)
+      )
+    );
   revalidatePath("/");
   revalidatePath("/finance");
   return {};

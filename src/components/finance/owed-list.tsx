@@ -8,19 +8,19 @@ import { formatCurrency } from "@/lib/currency";
 
 type OwedRow = { editorId: string; name: string; amount: number };
 
-export function OwedList({ rows }: { rows: OwedRow[] }) {
+export function OwedList({ rows, month }: { rows: OwedRow[]; month: string }) {
   const [isPending, startTransition] = useTransition();
 
   function handleMarkPaid(editorId: string) {
     startTransition(async () => {
-      const result = await markEditorPayoutsPaid(editorId);
+      const result = await markEditorPayoutsPaid(editorId, month);
       if (result.error) toast.error(result.error);
       else toast.success("Marked as paid");
     });
   }
 
   if (rows.length === 0) {
-    return <p className="text-sm text-muted-foreground">Nothing owed right now.</p>;
+    return <p className="text-sm text-muted-foreground">Nothing owed for this month.</p>;
   }
 
   return (

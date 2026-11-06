@@ -33,9 +33,19 @@ export default async function FinancePage({
   const monthStart = `${month}-01`;
   const monthEnd = new Date(Date.UTC(year, mon, 0)).toISOString().slice(0, 10);
 
+  const monthLabel = new Date(Date.UTC(year, mon - 1, 1)).toLocaleDateString("en-IN", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+
   const [unpaid, monthVideos] = await Promise.all([
     db.query.videos.findMany({
-      where: eq(videos.editorPaid, false),
+      where: and(
+        eq(videos.editorPaid, false),
+        gte(videos.date, monthStart),
+        lte(videos.date, monthEnd)
+      ),
       with: { editor: true },
     }),
     db.query.videos.findMany({
@@ -69,31 +79,31 @@ export default async function FinancePage({
           <h1 className="text-base font-medium text-muted-foreground">Finance</h1>
           <p className="text-xs text-muted-foreground/70">What you owe, and how the month&apos;s shaping up</p>
         </div>
-        <Button variant="outline" asChild>
-          <Link href="/">
-            <ArrowLeft className="size-4" />
-            Work tracker
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <MonthPicker month={month} />
+          <Button variant="outline" asChild>
+            <Link href="/">
+              <ArrowLeft className="size-4" />
+              Work tracker
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
         <div>
           <h2 className="text-sm font-medium">You owe</h2>
           <p className="text-xs text-muted-foreground">
-            Unpaid editor payouts across all time, total {formatCurrency(totalOwed)}
+            Unpaid editor payouts for {monthLabel}, total {formatCurrency(totalOwed)}
           </p>
         </div>
-        <OwedList rows={owedRows} />
+        <OwedList rows={owedRows} month={month} />
       </div>
 
       <div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-sm font-medium">This month</h2>
-            <p className="text-xs text-muted-foreground">Billed vs. paid out to editors</p>
-          </div>
-          <MonthPicker month={month} />
+        <div>
+          <h2 className="text-sm font-medium">{monthLabel}</h2>
+          <p className="text-xs text-muted-foreground">Billed vs. paid out to editors</p>
         </div>
         <div className="grid grid-cols-3 gap-4">
           <StatTile label="Billed" value={formatCurrency(billed)} />
